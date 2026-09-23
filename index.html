@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#112347">
+  <meta name="description" content="Nhập giờ chấm công để biết hôm nay mấy giờ được về.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Mấy giờ về?">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/icon-180.png">
+  <title>Mấy giờ được về?</title>
+  <style>
+    :root { color-scheme: light; font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f7fb; color: #132440; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100svh; background: radial-gradient(circle at 90% -5%, #dbe9ff 0, transparent 35%), #f5f7fb; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .shell { width: min(100%, 520px); margin: 0 auto; padding: max(34px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom)); }
+    .eyebrow { color: #52719d; font-size: 12px; letter-spacing: .14em; font-weight: 800; text-transform: uppercase; margin: 0 0 12px; }
+    h1 { margin: 0; font-size: clamp(30px, 8.2vw, 42px); line-height: 1.08; letter-spacing: -.045em; color: #10264a; }
+    .date { margin: 12px 0 27px; color: #667895; font-size: 15px; text-transform: capitalize; }
+    .card { background: #fff; border: 1px solid #e6eaf2; border-radius: 28px; padding: 24px; box-shadow: 0 20px 55px rgba(32, 60, 105, .08); }
+    label { display: block; font-size: 14px; font-weight: 750; margin-bottom: 12px; }
+    .input-row { display: flex; gap: 10px; align-items: stretch; }
+    input[type=time] { min-width: 0; width: 100%; height: 62px; border-radius: 16px; border: 2px solid #dce4f1; background: #f9fbfe; padding: 0 14px; color: #122c55; font-size: 27px; font-weight: 750; letter-spacing: .03em; outline: none; }
+    input[type=time]:focus { border-color: #497dff; box-shadow: 0 0 0 4px #497dff22; }
+    .now { flex: none; border: 0; border-radius: 16px; background: #e8efff; color: #2452bd; font-size: 13px; font-weight: 750; padding: 0 16px; }
+    .now:active { transform: scale(.98); }
+    .result { margin-top: 26px; padding: 26px 20px 23px; border-radius: 24px; text-align: center; background: linear-gradient(145deg, #18376e, #112347 70%); color: white; min-height: 230px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .result-label { margin: 0; color: #c4d7fb; font-size: 12px; font-weight: 800; letter-spacing: .16em; }
+    .checkout { margin: 8px 0 9px; font-size: clamp(62px, 18vw, 88px); font-weight: 800; letter-spacing: -.075em; line-height: 1.03; font-variant-numeric: tabular-nums; }
+    .status { display: inline-block; color: #d8e8ff; background: #ffffff1d; padding: 7px 12px; border-radius: 999px; font-size: 13px; font-weight: 700; }
+    .status.late { background: #ffdfad; color: #78480d; }
+    .countdown { margin: 18px 0 0; font-size: 15px; font-weight: 650; color: #dbe8ff; }
+    .hint { margin: 14px 3px 0; color: #667895; font-size: 13px; line-height: 1.5; }
+    .rules { margin-top: 25px; padding: 0 3px; color: #526783; font-size: 14px; }
+    .rules-title { color: #233e68; font-size: 13px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; margin-bottom: 12px; }
+    .rule { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid #e0e7f0; }
+    .rule strong { color: #213e67; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .foot { color: #8896aa; font-size: 12px; line-height: 1.5; margin: 22px 3px 0; }
+    @media (max-width: 360px) { .shell { padding-left: 14px; padding-right: 14px; } .card { padding: 18px; } .now { padding: 0 12px; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <p class="eyebrow">Chấm công hôm nay</p>
+    <h1>Mấy giờ được về? 🏠</h1>
+    <p class="date" id="today"></p>
+    <section class="card" aria-label="Tính giờ về">
+      <label for="checkin">Giờ check-in</label>
+      <div class="input-row">
+        <input id="checkin" type="time" step="60" autocomplete="off" aria-describedby="input-hint">
+        <button class="now" id="use-now" type="button">Bây giờ</button>
+      </div>
+      <div class="result" aria-live="polite" aria-atomic="true">
+        <p class="result-label">ĐƯỢC VỀ LÚC</p>
+        <p class="checkout" id="checkout">--:--</p>
+        <span class="status" id="status">Nhập giờ vào nhé</span>
+        <p class="countdown" id="countdown">Giờ về sẽ hiện ở đây</p>
+      </div>
+      <p class="hint" id="input-hint">Giờ vào được nhớ trên thiết bị này trong hôm nay.</p>
+    </section>
+    <section class="rules" aria-label="Quy định giờ làm">
+      <div class="rules-title">Giờ làm của mình</div>
+      <div class="rule"><span>Vào sớm nhất</span><strong>08:30</strong></div>
+      <div class="rule"><span>Linh hoạt đến</span><strong>09:30</strong></div>
+      <div class="rule"><span>Nghỉ trưa</span><strong>12:30–13:45</strong></div>
+      <div class="rule"><span>Thời gian làm việc</span><strong>8 giờ</strong></div>
+    </section>
+    <p class="foot">Nếu vào trước 08:30, giờ làm được tính từ 08:30. Sau 09:30 sẽ hiện “Đi muộn”.</p>
+  </main>
+  <script>
+    (() => {
+      const KEY = 'may-gio-ve-checkin-v1';
+      const checkin = document.getElementById('checkin');
+      const checkout = document.getElementById('checkout');
+      const status = document.getElementById('status');
+      const countdown = document.getElementById('countdown');
+      const today = document.getElementById('today');
+      let activeDate = '';
+
+      function dateKey(date) {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      }
+      function timeText(totalMinutes) {
+        const hours = Math.floor(totalMinutes / 60);
+        return `${String(hours).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}`;
+      }
+      function calculate(value) {
+        if (!/^\d{2}:\d{2}$/.test(value)) return null;
+        const [hour, minute] = value.split(':').map(Number);
+        if (hour > 23 || minute > 59) return null;
+        const entered = hour * 60 + minute;
+        return { entered, departure: Math.max(entered, 8 * 60 + 30) + 9 * 60 + 15, late: entered > 9 * 60 + 30 };
+      }
+      function readSaved(date) {
+        try {
+          const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+          return saved && saved.date === date && calculate(saved.time) ? saved.time : '';
+        } catch { return ''; }
+      }
+      function syncDate(now) {
+        const key = dateKey(now);
+        if (key === activeDate) return;
+        activeDate = key;
+        today.textContent = new Intl.DateTimeFormat('vi-VN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(now);
+        checkin.value = readSaved(key);
+        if (!checkin.value) localStorage.removeItem(KEY);
+      }
+      function render() {
+        const now = new Date();
+        syncDate(now);
+        const result = calculate(checkin.value);
+        status.classList.toggle('late', Boolean(result && result.late));
+        if (!result) {
+          checkout.textContent = '--:--';
+          status.textContent = 'Nhập giờ vào nhé';
+          countdown.textContent = 'Giờ về sẽ hiện ở đây';
+          return;
+        }
+        checkout.textContent = timeText(result.departure % 1440);
+        if (result.departure >= 1440) checkout.textContent += ' +1 ngày';
+        status.textContent = result.late ? 'Đi muộn' : result.entered < 510 ? 'Tính từ 08:30' : 'Đúng giờ';
+        const departure = new Date(now.getFullYear(), now.getMonth(), now.getDate(), Math.floor(result.departure / 60), result.departure % 60);
+        const remaining = departure.getTime() - now.getTime();
+        if (remaining <= 0) countdown.textContent = 'Được về rồi 🎉';
+        else {
+          const minutes = Math.ceil(remaining / 60000);
+          countdown.textContent = `Còn ${Math.floor(minutes / 60)} giờ ${minutes % 60} phút nữa`;
+        }
+      }
+      checkin.addEventListener('input', () => {
+        syncDate(new Date());
+        const value = checkin.value;
+        if (calculate(value)) localStorage.setItem(KEY, JSON.stringify({ date: activeDate, time: value }));
+        else localStorage.removeItem(KEY);
+        render();
+      });
+      document.getElementById('use-now').addEventListener('click', () => {
+        const now = new Date();
+        syncDate(now);
+        checkin.value = timeText(now.getHours() * 60 + now.getMinutes());
+        checkin.dispatchEvent(new Event('input'));
+      });
+      render();
+      setInterval(render, 30000);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
+      if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(() => {}));
+    })();
+  </script>
+</body>
+</html>
