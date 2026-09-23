@@ -81,6 +81,7 @@
       const countdown = document.getElementById('countdown');
       const today = document.getElementById('today');
       let activeDate = '';
+      let previousCheckinValue = '';
 
       function dateKey(date) {
         return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -98,7 +99,7 @@
       }
       function formatCheckinInput(raw) {
         let digits = String(raw || '').replace(/\D/g, '').slice(0, 4);
-        if (!digits) return '0';
+        if (!digits) return '';
         if (digits.length <= 3 && digits[0] !== '0') digits = `0${digits}`;
         if (digits.length === 1) return digits;
         if (digits.length === 2) return `${digits}:`;
@@ -122,6 +123,7 @@
         activeDate = key;
         today.textContent = new Intl.DateTimeFormat('vi-VN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(now);
         checkin.value = readSaved(key) || '0';
+        previousCheckinValue = checkin.value;
         if (!calculate(checkin.value)) localStorage.removeItem(KEY);
       }
       function render() {
@@ -150,10 +152,15 @@
         if (calculate(checkin.value)) requestAnimationFrame(() => checkin.select());
         else moveCaretToEnd();
       });
-      checkin.addEventListener('input', () => {
+      checkin.addEventListener('input', event => {
         syncDate(new Date());
-        const formatted = formatCheckinInput(checkin.value);
+        const raw = checkin.value;
+        const deletedAutoColon = event.inputType === 'deleteContentBackward'
+          && /^\d{2}:$/.test(previousCheckinValue)
+          && raw === previousCheckinValue.slice(0, 2);
+        const formatted = deletedAutoColon ? '' : formatCheckinInput(raw);
         if (checkin.value !== formatted) checkin.value = formatted;
+        previousCheckinValue = checkin.value;
         moveCaretToEnd();
         const value = checkin.value;
         if (calculate(value)) localStorage.setItem(KEY, JSON.stringify({ date: activeDate, time: value }));
