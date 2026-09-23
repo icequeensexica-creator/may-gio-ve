@@ -1,0 +1,14 @@
+{
+  "name": "Mấy giờ được về?",
+  "short_name": "Mấy giờ về?",
+  "description": "Tính giờ về từ giờ chấm công hôm nay.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#112347",
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
