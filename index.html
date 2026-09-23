@@ -52,7 +52,7 @@
     <section class="card" aria-label="Tính giờ về">
       <label for="checkin">Giờ check-in</label>
       <div class="input-row">
-        <input id="checkin" type="time" step="60" autocomplete="off" aria-describedby="input-hint">
+        <input id="checkin" class="checkin-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Giờ check-in, định dạng giờ phút" aria-describedby="input-hint">
         <button class="now" id="use-now" type="button">Bây giờ</button>
       </div>
       <div class="result" aria-live="polite" aria-atomic="true">
@@ -61,7 +61,7 @@
         <span class="status" id="status">Nhập giờ vào nhé</span>
         <p class="countdown" id="countdown">Giờ về sẽ hiện ở đây</p>
       </div>
-      <p class="hint" id="input-hint">Giờ vào được nhớ trên thiết bị này trong hôm nay.</p>
+      <p class="hint" id="input-hint">Nhập số trực tiếp, ví dụ 9 → 09: rồi nhập tiếp 30. Giờ vào được nhớ trên thiết bị này trong hôm nay.</p>
     </section>
     <section class="rules" aria-label="Quy định giờ làm">
       <div class="rules-title">Giờ làm của mình</div>
@@ -96,6 +96,20 @@
         const entered = hour * 60 + minute;
         return { entered, departure: Math.max(entered, 8 * 60 + 30) + 9 * 60 + 15, late: entered > 9 * 60 + 30 };
       }
+      function formatCheckinInput(raw) {
+        let digits = String(raw || '').replace(/\D/g, '').slice(0, 4);
+        if (!digits) return '0';
+        if (digits.length <= 3 && digits[0] !== '0') digits = `0${digits}`;
+        if (digits.length === 1) return digits;
+        if (digits.length === 2) return `${digits}:`;
+        return `${digits.slice(0, 2)}:${digits.slice(2, 4)}`;
+      }
+      function moveCaretToEnd() {
+        requestAnimationFrame(() => {
+          const end = checkin.value.length;
+          try { checkin.setSelectionRange(end, end); } catch {}
+        });
+      }
       function readSaved(date) {
         try {
           const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
@@ -107,8 +121,8 @@
         if (key === activeDate) return;
         activeDate = key;
         today.textContent = new Intl.DateTimeFormat('vi-VN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(now);
-        checkin.value = readSaved(key);
-        if (!checkin.value) localStorage.removeItem(KEY);
+        checkin.value = readSaved(key) || '0';
+        if (!calculate(checkin.value)) localStorage.removeItem(KEY);
       }
       function render() {
         const now = new Date();
@@ -132,8 +146,15 @@
           countdown.textContent = `Còn ${Math.floor(minutes / 60)} giờ ${minutes % 60} phút nữa`;
         }
       }
+      checkin.addEventListener('focus', () => {
+        if (calculate(checkin.value)) requestAnimationFrame(() => checkin.select());
+        else moveCaretToEnd();
+      });
       checkin.addEventListener('input', () => {
         syncDate(new Date());
+        const formatted = formatCheckinInput(checkin.value);
+        if (checkin.value !== formatted) checkin.value = formatted;
+        moveCaretToEnd();
         const value = checkin.value;
         if (calculate(value)) localStorage.setItem(KEY, JSON.stringify({ date: activeDate, time: value }));
         else localStorage.removeItem(KEY);
